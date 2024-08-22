@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Tri-Mix Stick
+Comment=NITROX TOOL
+Exec=/home/MixerPi/Gas-Blending/TRI-MIX.STICK.py
+Icon=/home/MixerPi/Gas-Blending/divetools.png
+Terminal=false
+Type=Application

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Health
+Comment=NITROX TOOL
+Exec=/home/MixerPi/Gas-Blending/HEALTH.py
+Icon=/home/MixerPi/Gas-Blending/divetools.png
+Terminal=true
+Type=Application

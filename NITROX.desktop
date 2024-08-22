@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=NITROX
+Comment=NITROX TOOL
+Exec=/home/MixerPi/Gas-Blending/NITROX.py
+Icon=/home/MixerPi/Gas-Blending/divetools.png
+Terminal=false
+Type=Application
+Categories=Application;

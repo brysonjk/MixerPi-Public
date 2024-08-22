@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Update
+Comment=Update TOOL
+Exec=/home/MixerPi/Gas-Blending/UPDATE.sh
+Icon=/home/MixerPi/Gas-Blending/divetools.png
+Terminal=true
+Type=Application
