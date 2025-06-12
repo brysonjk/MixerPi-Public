@@ -9,12 +9,12 @@ echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> /home/MixerPi/.
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
 #create the python virtual environment
+
+## From your working directory (eg. /home/user/MixerPi-Public/)
 python3 -m venv --system-site-packages .venv 
 
 source .venv/bin/python 
-pip3 install lpgio
+pip3 install pyqt6
+pip3 install lgpio
 pip3 install adafruit-circuitpython-ads1x15
 pip3 install simple_pid
-
-
-sudo apt install qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools

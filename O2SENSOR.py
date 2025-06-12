@@ -9,7 +9,7 @@ import busio
 import time
 import threading
 
-# Constants
+# Constant
 MULTIPLIER = 0.0078125
 CALIBRATION_DELAY = 10  # Delay in seconds during calibration
 EMA_UPDATE_INTERVAL = 0.01  # Interval for EMA updates

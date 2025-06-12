@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from tkinter import *
-from O2SENSOR import *
+from O2SENSOR_old import *
 
 class App:
 

@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import time, os
-from O2SENSOR import *
+from O2SENSOR_old import *
 
 while True:
    O2_S0 = round(chan0.value / FAC_S0,1)
