@@ -1,110 +1,156 @@
 #!.venv/bin/python3
 # -*- coding: utf-8 -*-
 
-#import pandas as pd
-#import numpy as np
 import adafruit_ads1x15.ads1115 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
+from simple_pid import PID
 import board
 import busio
+import time
+import threading
 
-O2_COUNT = 6
-FAC_COUNT = 50
-FAC_S0 = 0.0
-FAC_S1 = 0.0
+# Constants
+MULTIPLIER = 0.0078125
+CALIBRATION_DELAY = 10  # Delay in seconds during calibration
+EMA_UPDATE_INTERVAL = 0.01  # Interval for EMA updates
+PID_MIN = 0  # Minimum PID output
+PID_MAX = 255  # Maximum PID output
 
+# variables
+targetOxygen = 0.0
+
+# I2C and ADC setup
 i2c = busio.I2C(board.SCL, board.SDA)
 ads = ADS.ADS1115(i2c)
-
 chan0 = AnalogIn(ads, ADS.P0)
 chan1 = AnalogIn(ads, ADS.P1)
 
+# Calibration state
+calibrated0 = False
+calValue0 = 0.0
+
+# Exponential Moving Average (EMA) class
+class EMA:
+    def __init__(self, k):
+        self.k = k
+        self.state = 0
+        self.half = 1 << (k - 1)
+        self.output = 0.0
+
+    def update(self, input_value):
+        """Update the EMA with a new input value."""
+        self.state += input_value
+        self.output = (self.state + self.half) >> self.k
+        self.state -= self.output
+        return self.output
+
+    def getEmaValue(self):
+        """Get the current EMA value."""
+        return self.output
+
+# Function to run EMA updates in a thread
+def ema_thread(ema_instance, input_source, interval=EMA_UPDATE_INTERVAL):
+    """Continuously update the EMA instance with values from the input source."""
+    while True:
+        input_value = input_source()
+        ema_instance.update(input_value)
+        time.sleep(interval)
+
+# Calibration function
+def calibrate(ema):
+    """Calibrate the EMA by averaging sensor data over a period."""
+    print("Starting calibration...")
+    for _ in range(CALIBRATION_DELAY):  # Simulate 10 seconds of calibration
+        time.sleep(1)
+    print("Calibration complete.")
+    return ema.getEmaValue()
+
+# Sensor data functions
+def get_chan0_data():
+    """Get data from channel 0."""
+    ads.gain = 16
+    return chan0.value
+
+def get_chan1_data():
+    """Get data from channel 1."""
+    ads.gain = 16
+    return chan1.value
+
+# create PID function
+def initializePID(Kp, Ki, Kd, sp=targetOxygen):
+    pid = PID(Kp,Ki,Kd,sp)
+    pid.output_limits = (PID_MIN, PID_MAX)  # Limit PID Moutput to a range
+    return pid
+
+# Target Setpoint functions
+def setTargetOxygen(target):
+    targetOxygen = target
+
+def getTargetOxyget():
+    return targetOxygen
+
+def pid_thread(pid, ema_instance, cal_value, interval=0.01):
+    """Continuously calculate PID output based on EMA values."""
+    while True:
+        if cal_value != 0:  # Ensure calibration is complete
+            ema_value = ema_instance.getEmaValue()
+            oxygen_reading = (ema_value / cal_value) * 20.9
+            
+            #Calculate PID Output
+            pid_output = pid(oxygen_reading)
+            return pid_output
+        else:
+            print(f"cal_value = {cal_value}")
+            print("Channel 0 not calibrated.")
+
+   
+
+# Main function
+def main():
+    # Create an EMA instance for channel 0
+    ema0 = EMA(k=4)
+
+    # Start the EMA thread for channel 0
+    threading.Thread(target=ema_thread, args=(ema0, get_chan0_data), daemon=True).start()
 
 
-def sensor_env():
-        global FAC_S0
-        global FAC_S1
+    # Calibrate channel 0
+    global calibrated0, calValue0
+    if not calibrated0:
+        calValue0 = calibrate(ema0)
+        calibrated0 = calValue0 != 0
 
-        FAC_S0 = 0.0
-        FAC_S1 = 0.0
+    # Initialize PID controller
+    pid = initializePID(1.0, 5.0, 0.1, targetOxygen)
 
-        for x in range (1,FAC_COUNT):
-               ads.gain = 16
-               FAC_S0 += chan0.value
-        FAC_S0 = (FAC_S0 / FAC_COUNT / 20.9) 
+    # Start the PID thread
+    threading.Thread(target=pid_thread, args=(pid, ema0, calValue0), daemon=True).start()
+    loop=0
+    # Main loop to display sensor data and calculate PID output
+    while True:
         
-        for x in range (1,FAC_COUNT):
-                ads.gain = 16
-                FAC_S1 += chan1.value
-        FAC_S1 = (FAC_S1 / FAC_COUNT / 20.9)
+        if calibrated0:
 
-sensor_env()
+            ema_value = ema0.getEmaValue()
+            oxygen_reading = (ema_value / calValue0) * 20.9
 
-""" def ema(s, n):
+            # Calculate PID output
+            pid_output = pid(oxygen_reading)
 
-    returns an n period exponential moving average for
-    the time series s
+            # Print sensor data and PID output
+            print(f"Updated EMA value: {ema_value}")
+            print(f"Calibration Value: {calValue0}")
+            print(f"Oxygen Reading: {oxygen_reading:.1f}%")
+            print(f"PID Output: {pid_output:.2f}")
+            print(f"Loop Value: {loop}")
+            loop+=1
+            if (loop == 5):
+                pid.setpoint = 32
+            if (loop ==10):
+                pid.setpoint = 18
+        else:
+            print("Channel 0 not calibrated.")
+        time.sleep(1)
 
-    s is a list ordered from oldest (index 0) to most
-    recent (index -1)
-    n is an integer
-
-    returns a numeric array of the exponential
-    moving average
-
-    s = array(s)
-    ema = []
-    j = 1
-
-    #get n sma first and calculate the next n period ema
-    sma = sum(s[:n]) / n
-    multiplier = 2 / float(1 + n)
-    ema.append(sma)
-
-    #EMA(current) = ( (Price(current) - EMA(prev) ) x Multiplier) + EMA(prev)
-    ema.append(( (s[n] - sma) * multiplier) + sma)
-
-    #now calculate the rest of the values
-    for i in s[n+1:]:
-        tmp = ( (i - ema[j]) * multiplier) + ema[j]
-        j = j + 1
-        ema.append(tmp)
-
-    return ema """
-
-""" def ExpMovingAverage (values, window):
-        weights = np.exp(np.linspace(-1.,0.,window))
-        weights /= weights.sum()
-        ema = np.convolve(values,weights)[:len(values)]
-        ema[:window]=ema[window]
-        return ema """
-
-def calibrate():
-        for x in range (1,FAC_COUNT):
-                ads.gain = 16
-                FAC_S0 += chan0.value
-        FAC_S0 = (FAC_S0 / FAC_COUNT / 20.9) 
-        for x in range (1,FAC_COUNT):
-                ads.gain = 16
-                FAC_S1 += chan1.value
-        FAC_S1 = (FAC_S1 / FAC_COUNT / 20.9)
-
-def get_O2_S0():
-        O2_S0_INT = O2_COUNT
-        O2_S0 = 0
-        for x in range (0,O2_COUNT):
-               ads.gain = 16
-               O2_S0 += chan0.value
-        O2_S0 = (O2_S0 / O2_COUNT / FAC_S0)
-        return (O2_S0)
-
-def get_O2_S1():
-        O2_S1_INT = O2_COUNT
-        O2_S1 = 0
-        for x in range (0,O2_COUNT):
-               ads.gain = 16
-               O2_S1 += chan1.value
-        O2_S1 = (O2_S1 / O2_COUNT / FAC_S1)
-        return (O2_S1)
-
-
+if __name__ == "__main__":
+    main()
