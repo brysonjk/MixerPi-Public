@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!.venv/bin/python3
 # -*- coding: utf-8 -*-
 
 from tkinter import *
@@ -47,8 +47,8 @@ class App:
                 down_btn = Button(frame, text="-",command=self.fac_down)
                 down_btn.grid(row=5, column=2)
 
-                #Calibrate_btn = Button(frame, text="CAL", command=calibrate())
-                #Calibrate_btn.grid(row=5, column=3)
+                Calibrate_btn = Button(frame, text="CAL", command=calibrate())
+                Calibrate_btn.grid(row=5, column=3)
 
                 #FAC_S0 = FAC_S0
                 self.update_reading()

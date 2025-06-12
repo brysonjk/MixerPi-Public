@@ -1,8 +1,8 @@
-#!/usr/bin/python3
+#!.venv/bin/python3
 # -*- coding: utf-8 -*-
 
-import pandas as pd
-import numpy as np
+#import pandas as pd
+#import numpy as np
 import adafruit_ads1x15.ads1115 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
 import board
