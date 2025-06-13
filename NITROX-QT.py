@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout, QVBoxLayout, \
       QHBoxLayout, QLabel, QSplashScreen,QPushButton, QSpacerItem
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QPixmap
-import O2SENSOR_old as o2
+import O2SENSOR as o2
 import threading
 
 
